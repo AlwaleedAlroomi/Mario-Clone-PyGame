@@ -19,12 +19,48 @@ PLATER_VEL = 5 # the speed of the player to move on the screen
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
 
+# A function to flip the char images 
+# ex, when want to move the opposite direction then the char should be flipped to face the other side 
+def flip(sprites):
+    # firts arg is the source i want to flip, the 2nd and 3rd how to flip it in x or y
+    return [pygame.transform.flip(sprite, True, False) for sprite in sprites]
+
+
+def load_sprite_sheets(dir1, dir2, width, height, direction=False):
+    path = join('assets', dir1, dir2)
+    # it will get all the files in path and then the image dic will have the directions for every image
+    images = [f for f in listdir(path) if isfile(join(path, f))]
+
+    all_sprites = {}
+
+    for image in images:
+        # conver_alpha() -> make a png smooth its edges. 
+        # convert() method will convert the pixle formats to the same pixle format as the display
+        sprite_sheet = pygame.image.load(join(path, image)).convert_alpha()
+
+        sprites = []
+        for i in range(sprite_sheet.get_width() // width):
+            surface = pygame.Surface((width, height), pygame.SRCALPHA, 32)
+            rect = pygame.Rect(i * width, 0, width, height)
+            surface.blit(sprite_sheet,(0, 0), rect)
+            sprites.append(pygame.transform.scale2x(surface))
+
+        if direction:
+            all_sprites[image.replace('.png', '') + '_right'] = sprites
+            all_sprites[image.replace('.png', '') + '_left'] = flip(sprites)
+        else:
+            all_sprites[image.replace('.png', '')] = sprites
+
+    return all_sprites
+
+
 class Player(pygame.sprite.Sprite):
     """
         Spawn a player
     """
     COLOR = (255, 0, 0)
     GRAVITY = 1 
+    SPRITES = load_sprite_sheets(dir1='MainCharacters', dir2='MaskDude', width=32, height=32, direction=True)
 
     def __init__(self, x, y, width, height):
         # Rect create a rectangle
@@ -57,14 +93,15 @@ class Player(pygame.sprite.Sprite):
             self.animation_count = 0
 
     def loop(self, fps):
-        self.y_vel += min(1, (self.fall_count / fps) * self.GRAVITY)
+        # self.y_vel += min(1, (self.fall_count / fps) * self.GRAVITY)
         # it calls once every frame to move our char and animation 
         self.move(self.x_vel, self.y_vel)
 
         self.fall_count += 1
 
     def draw(self, win):
-        pygame.draw.rect(win, self.COLOR, self.rect)
+        self.sprite = self.SPRITES['idle_' + self.direction][0]
+        win.blit(self.sprite, (self.rect.x, self.rect.y))
 
 def get_background(name):
     image = pygame.image.load(join('assets', 'Background', name))
