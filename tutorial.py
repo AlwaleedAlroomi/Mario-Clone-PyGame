@@ -14,7 +14,7 @@ pygame.display.set_caption('First Game')
 
 WIDTH, HEIGHT = 1366, 768
 
-FPS = 60
+FPS = 30
 PLATER_VEL = 5 # the speed of the player to move on the screen
 
 window = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -58,9 +58,9 @@ class Player(pygame.sprite.Sprite):
     """
         Spawn a player
     """
-    COLOR = (255, 0, 0)
     GRAVITY = 1 
     SPRITES = load_sprite_sheets(dir1='MainCharacters', dir2='MaskDude', width=32, height=32, direction=True)
+    ANIMATION_DELAY = 3
 
     def __init__(self, x, y, width, height):
         # Rect create a rectangle
@@ -68,7 +68,7 @@ class Player(pygame.sprite.Sprite):
         self.x_vel = 0
         self.y_vel = 0
         self.mask = 0
-        self.direction = "left"
+        self.direction = "right"
         self.animation_count = 0
         self.fall_count = 0
 
@@ -98,9 +98,23 @@ class Player(pygame.sprite.Sprite):
         self.move(self.x_vel, self.y_vel)
 
         self.fall_count += 1
+        self.update_sprite()
+
+    def update_sprite(self):
+        # the main animation of the char
+        sprite_sheet = 'idle'
+        # check if the player by check its x_vel
+        if self.x_vel != 0:
+            sprite_sheet = 'run'
+            
+        sprite_sheet_name = sprite_sheet + '_' + self.direction
+        sprites = self.SPRITES[sprite_sheet_name]
+        sprite_index = (self.animation_count // self.ANIMATION_DELAY) % len(sprites)
+        self.sprite = sprites[sprite_index]
+        self.animation_count += 1
 
     def draw(self, win):
-        self.sprite = self.SPRITES['idle_' + self.direction][0]
+        # self.sprite = self.SPRITES['idle_' + self.direction][0]
         win.blit(self.sprite, (self.rect.x, self.rect.y))
 
 def get_background(name):
@@ -145,7 +159,6 @@ def main(window):
     run = True
     while run:
         clock.tick(FPS)
-        draw(window= window, background= background, bg_image= bg_image, player= player)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
@@ -153,6 +166,8 @@ def main(window):
     
         player.loop(FPS)
         handle_move(player= player)
+        draw(window= window, background= background, bg_image= bg_image, player= player)
+
     pygame.quit()
     quit()
 
